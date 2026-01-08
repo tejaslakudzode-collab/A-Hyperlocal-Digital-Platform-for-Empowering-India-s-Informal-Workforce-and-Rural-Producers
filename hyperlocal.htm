@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorkSphere – Hyperlocal Marketplace</title>
+
+<style>
+body{font-family:'Segoe UI',sans-serif;margin:0;background:#f0f4ff}
+header{background:linear-gradient(90deg,#1e3a8a,#2563eb);color:#fff;padding:20px;text-align:center;border-radius:0 0 24px 24px}
+.container{padding:16px;max-width:420px;margin:auto}
+.card{background:#fff;padding:18px;margin-bottom:18px;border-radius:18px;
+box-shadow:0 8px 22px rgba(0,0,0,.08)}
+.hidden{display:none}
+input,select{width:100%;padding:12px;margin:8px 0 12px;border-radius:12px;border:1px solid #c7d2fe}
+button{width:100%;padding:14px;border:none;border-radius:14px;font-size:15px;margin-bottom:10px;cursor:pointer}
+.primary{background:#2563eb;color:#fff}
+.primary:disabled{background:#9ca3af}
+.secondary{background:#eef2ff;color:#1e3a8a}
+.tag{display:inline-block;background:#e0e7ff;color:#1e3a8a;padding:8px 14px;
+border-radius:24px;font-size:14px;margin:6px;cursor:pointer}
+.provider{border:1px solid #e5e7eb;border-radius:16px;padding:14px;margin-top:12px}
+.cart{background:#ecfeff;padding:10px;border-radius:12px;margin-top:10px;font-size:14px}
+.upi-btn{border:2px solid #c7d2fe;background:#fff}
+.upi-btn.active{border-color:#2563eb;background:#eef2ff}
+</style>
+</head>
+
+<body>
+
+<header>
+<h2>WorkSphere</h2>
+<p>Workers • Artisans • Grocery • Local Shops</p>
+</header>
+
+<div class="container">
+
+<!-- LANGUAGE -->
+<div id="language" class="card">
+<h3>Select Language</h3>
+<select id="langSelect" onchange="selectLanguage()">
+<option value="">Choose Language</option>
+<option>Hindi</option>
+<option>Marathi</option>
+<option>English</option>
+</select>
+<button id="langBtn" class="primary" disabled onclick="show('login')">Continue</button>
+</div>
+
+<!-- LOGIN -->
+<div id="login" class="card hidden">
+<h3>Login / Register</h3>
+<input id="name" placeholder="Full Name">
+<input id="email" placeholder="Email">
+<input id="mobile" placeholder="Mobile Number">
+<select id="role">
+<option value="">Login as</option>
+<option>Customer</option>
+<option>Worker</option>
+<option>Artisan</option>
+<option>Shopkeeper</option>
+</select>
+<button class="primary" onclick="validateLogin()">Login via OTP</button>
+<p id="loginError" style="color:red;font-size:13px"></p>
+</div>
+
+<!-- SELECT SERVICE -->
+<div id="choose" class="card hidden">
+<h3>Select Service</h3>
+<span class="tag" onclick="showWorkers('Plumber')">🔧 Plumber</span>
+<span class="tag" onclick="showWorkers('Electrician')">⚡ Electrician</span>
+<span class="tag" onclick="showWorkers('Carpenter')">🪚 Carpenter</span>
+<span class="tag" onclick="showWorkers('Painter')">🎨 Painter</span>
+<span class="tag" onclick="show('shop')">🛒 Grocery & Shops</span>
+</div>
+
+<!-- WORKERS -->
+<div id="workers" class="card hidden">
+<h3 id="workerTitle"></h3>
+<div id="workerList"></div>
+</div>
+
+<!-- SHOPS -->
+<div id="shop" class="card hidden">
+<h3>Nearby Grocery Stores</h3>
+<div class="provider">
+<b>Patil Kirana</b><p>⭐4.7 • 0.8 km</p>
+<button class="primary" onclick="show('grocery')">View Products</button>
+</div>
+<div class="provider">
+<b>Sharma General</b><p>⭐4.5 • 1.5 km</p>
+<button class="primary" onclick="show('grocery')">View Products</button>
+</div>
+</div>
+
+<!-- GROCERY -->
+<div id="grocery" class="card hidden">
+<h3>Grocery Items</h3>
+<div class="provider"><b>Milk 1L</b><p>₹55</p><button class="secondary" onclick="addCart('Milk 1L')">Add</button></div>
+<div class="provider"><b>Rice 5Kg</b><p>₹320</p><button class="secondary" onclick="addCart('Rice 5Kg')">Add</button></div>
+<div class="provider"><b>Vegetable Combo</b><p>₹180</p><button class="secondary" onclick="addCart('Vegetables')">Add</button></div>
+<div id="cart" class="cart">Cart: Empty</div>
+<button class="primary" onclick="show('payment')">Proceed to Payment</button>
+</div>
+
+<!-- PAYMENT -->
+<div id="payment" class="card hidden">
+<h3>Payment</h3>
+<select id="paymode" onchange="toggleUPI()">
+<option value="">Select Payment Method</option>
+<option value="upi">UPI</option>
+<option>Cash on Delivery</option>
+</select>
+
+<div id="upiapps" class="hidden">
+<h4>Select UPI App</h4>
+<button id="gpay" class="upi-btn" onclick="selectUPI('gpay')">📱 Google Pay</button>
+<button id="phonepe" class="upi-btn" onclick="selectUPI('phonepe')">💜 PhonePe</button>
+<button id="paytm" class="upi-btn" onclick="selectUPI('paytm')">💙 Paytm</button>
+</div>
+
+<button id="confirmBtn" class="primary" disabled onclick="confirmPayment()">Confirm Payment</button>
+</div>
+
+<!-- THANK YOU -->
+<div id="thanks" class="card hidden">
+<h3>Thank You!</h3>
+<p>Your booking/order has been placed successfully.</p>
+</div>
+
+</div>
+
+<script>
+let selectedLanguage=null;
+let selectedUPI=null;
+let cartItems=[];
+
+const workers={
+Plumber:[
+{name:'Ramesh Patil',phone:'9876543211',dist:'0.8 km'},
+{name:'Amit Shinde',phone:'9123456782',dist:'1.4 km'},
+{name:'Suresh Jadhav',phone:'9988776653',dist:'2.1 km'},
+{name:'Kunal Deshmukh',phone:'9012345674',dist:'2.8 km'}
+],
+Electrician:[
+{name:'Rahul Pawar',phone:'9898989891',dist:'0.6 km'},
+{name:'Manoj Kulkarni',phone:'9765432106',dist:'1.3 km'},
+{name:'Deepak More',phone:'9345678217',dist:'2.0 km'},
+{name:'Vikas Joshi',phone:'9556677888',dist:'2.9 km'}
+],
+Carpenter:[
+{name:'Ajay Sawant',phone:'9887766554',dist:'0.9 km'},
+{name:'Sunil Gaikwad',phone:'9011223344',dist:'1.7 km'},
+{name:'Mahesh Patankar',phone:'9321456789',dist:'2.4 km'},
+{name:'Rohit Bhosale',phone:'9876501234',dist:'3.0 km'}
+],
+Painter:[
+{name:'Anil Koli',phone:'9765432198',dist:'0.7 km'},
+{name:'Pravin Chavan',phone:'9890011223',dist:'1.5 km'},
+{name:'Sachin Mane',phone:'9123098765',dist:'2.2 km'},
+{name:'Nilesh Thorat',phone:'9988123456',dist:'3.1 km'}
+]
+};
+
+function show(id){
+['language','login','choose','workers','shop','grocery','payment','thanks']
+.forEach(s=>document.getElementById(s).classList.add('hidden'));
+document.getElementById(id).classList.remove('hidden');
+}
+
+function selectLanguage(){
+selectedLanguage=document.getElementById('langSelect').value;
+document.getElementById('langBtn').disabled=!selectedLanguage;
+}
+
+function validateLogin(){
+const m=document.getElementById('mobile').value;
+const r=document.getElementById('role').value;
+if(!/^[6-9][0-9]{9}$/.test(m)){
+document.getElementById('loginError').innerText='Enter valid 10-digit mobile number';
+return;
+}
+if(r===''){
+document.getElementById('loginError').innerText='Please select a role';
+return;
+}
+document.getElementById('loginError').innerText='';
+show('choose');
+}
+
+function showWorkers(domain){
+document.getElementById('workerTitle').innerText=domain+' Available';
+const list=document.getElementById('workerList');
+list.innerHTML='';
+workers[domain].forEach(w=>{
+list.innerHTML+=`
+<div class="provider">
+<b>${w.name}</b>
+<p>📞 ${w.phone}</p>
+<p>⭐ 4.6 • ${w.dist}</p>
+<button class="primary" onclick="show('payment')">Book</button>
+</div>`;
+});
+show('workers');
+}
+
+function addCart(item){
+cartItems.push(item);
+document.getElementById('cart').innerText='Cart: '+cartItems.join(', ');
+}
+
+function toggleUPI(){
+const v=document.getElementById('paymode').value;
+document.getElementById('upiapps').classList.toggle('hidden',v!=='upi');
+document.getElementById('confirmBtn').disabled=true;
+selectedUPI=null;
+}
+
+function selectUPI(app){
+selectedUPI=app;
+document.querySelectorAll('.upi-btn').forEach(b=>b.classList.remove('active'));
+document.getElementById(app).classList.add('active');
+document.getElementById('confirmBtn').disabled=false;
+}
+
+function confirmPayment(){
+if(document.getElementById('paymode').value==='upi' && !selectedUPI){
+alert('Select a UPI app');
+return;
+}
+show('thanks');
+}
+</script>
+
+</body>
+</html>
